@@ -1,0 +1,15 @@
+/* RW2 – theme overrides (wins over style.css) */
+:root {
+  /* Example brand tweaks (uncomment + edit as needed) */
+  /* --accent: #6bd0ff; */
+  /* --ink: #f2f6ff; */
+  /* --muted: #a9b9ff; */
+}
+
+.panel {
+  border-radius: 18px;
+}
+
+.component .cta {
+  border-radius: 12px;
+}

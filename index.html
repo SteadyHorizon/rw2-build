@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- START: Head (Meta + Title + Schema-ready hooks) -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RW2 • Reveal Build</title>
+  <meta name="description" content="RW2 Reveal Build — Chat Feel Talk + Broadcast with Blink transitions, persona-tuned cards, and micro-commitment flow." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
+  <!-- END: Head -->
+
+  <style>
+    /* START: Base Reset + Theme */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; color: #0f172a; background:#0b1020; }
+    :root{
+      --bg: #0b1020;
+      --panel: #0e1428;
+      --ink: #e6ecff;
+      --muted: #9fb0ff;
+      --accent: #7aa2ff;
+      --line: #1a223d;
+      --ok: #60d394;
+      --warn:#f5a524;
+      --danger:#ef476f;
+      --soft: rgba(255,255,255,0.06);
+      --soft-2: rgba(255,255,255,0.12);
+      --blinkDur: 120ms;  /* Blink Transition */
+    }
+    /* END: Base Reset + Theme */
+
+    /* START: Layout Shell (Grid + Flex mix) */
+    #app { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
+    nav { position: sticky; top: 0; z-index: 40; background: linear-gradient(180deg, #0c142c, #0b1020); border-bottom: 1px solid var(--line); }
+    .nav-wrap{ max-width:1200px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; gap:16px; }
+    .brand{ font-weight:700; letter-spacing:.4px; color:var(--ink); }
+    .nav-links{ margin-left:auto; display:flex; gap:12px; flex-wrap:wrap; }
+    .nav-links a{ color:var(--muted); text-decoration:none; padding:8px 12px; border-radius:10px; background:var(--soft); border:1px solid transparent; }
+    .nav-links a:hover{ border-color:var(--soft-2); color:var(--ink); }
+
+    main{ max-width:1200px; margin:0 auto; padding:20px 16px 80px; display:grid; grid-template-columns: 1.2fr .8fr; gap:20px; }
+    @media (max-width: 980px){ main{ grid-template-columns:1fr; } }
+
+    /* Panels */
+    .panel{ background:linear-gradient(180deg, #0f1631, #0b1020); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+    .panel-header{ padding:14px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; }
+    .panel-header h2{ margin:0; font-size:14px; font-weight:600; color:var(--muted); letter-spacing:.3px; }
+    .panel-body{ padding:16px; }
+
+    /* END: Layout Shell (Grid + Flex mix) */
+
+    /* START: Chat Feel Talk (hero) */
+    #chatFeelTalk{ display:flex; flex-direction:column; min-height:520px; }
+    .chat-stream{ flex:1; display:flex; flex-direction:column; gap:10px; overflow:auto; padding-right:4px; }
+    .msg{ max-width:84%; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:var(--panel); color:var(--ink); line-height:1.35; }
+    .msg.you{ align-self:flex-end; background:#152046; }
+    .msg.rw2{ align-self:flex-start; border-left:2px solid var(--accent); }
+    .soft-label{ font-size:11px; color:var(--muted); opacity:.9; }
+    .chat-input{ display:flex; gap:10px; padding-top:8px; border-top:1px dashed var(--line); }
+    .chat-input input{ flex:1; background:#0e1634; border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:10px 12px; outline:none; }
+    .chat-input button{ background:var(--accent); color:#0b1020; border:0; padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer; }
+    .chat-input button:hover{ filter:brightness(1.05); }
+
+    /* Micro-commitment bar (wizard-lite) */
+    .micro{ display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 0; }
+    .chip{ font-size:12px; padding:6px 10px; border-radius:999px; background:var(--soft); color:var(--ink); border:1px solid var(--line); cursor:pointer; }
+    .chip[aria-pressed="true"]{ background:#17224a; border-color:#243061; }
+
+    /* END: Chat Feel Talk */
+
+    /* START: Broadcast (Component Zone grid 25/25/25/25) */
+    #broadcast .panel-body{ padding:0; }
+    .component-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; padding:12px; }
+    @media (max-width: 1100px){ .component-grid{ grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px){ .component-grid{ grid-template-columns: 1fr; } }
+
+    .component{ background:linear-gradient(180deg, #10183a, #0c1330); border:1px solid var(--line); border-radius:14px; padding:14px; min-height:120px; display:flex; flex-direction:column; gap:8px; opacity:1; transform:translateY(0); }
+    .component.hidden{ display:none; }
+    .component .h{ font-size:16px; font-weight:700; color:var(--ink); }
+    .component .sub{ font-size:13px; color:var(--muted); }
+    .component .cta{ margin-top:auto; align-self:flex-start; padding:8px 12px; font-size:12px; border-radius:10px; border:1px solid var(--line); background:var(--soft); color:var(--ink); cursor:pointer; }
+
+    /* Reveal effects */
+    .fade-in{ animation: fadeIn var(--blinkDur) ease-out; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px);} to { opacity:1; transform:translateY(0);} }
+
+    /* Blink Transition (screen-level) */
+    .blink { animation: blink var(--blinkDur) ease-in-out; }
+    @keyframes blink { 0%{ opacity:1 } 40%{ opacity:.2 } 100%{ opacity:1 } }
+
+    /* Footer */
+    footer{ border-top:1px solid var(--line); color:var(--muted); }
+    .foot{ max-width:1200px; margin:0 auto; padding:18px 16px; font-size:12px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+
+    /* Utility */
+    .sr-only{ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); }
+    .row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+  <div id="app" data-build="RW2-Reveal" data-version="v1" data-mode="soft-reactive-default">
+    <!-- START: Nav -->
+    <nav>
+      <div class="nav-wrap">
+        <div class="brand">RW2 • SignalPath</div>
+        <div class="nav-links" role="navigation" aria-label="Primary">
+          <a href="#about" data-route="about">About</a>
+          <a href="#faq" data-route="faq">FAQ</a>
+          <a href="#trust" data-route="trust">Trust</a>
+          <a href="#start" data-route="start" id="start-button">Start</a>
+        </div>
+      </div>
+    </nav>
+    <!-- END: Nav -->
+
+    <main id="main">
+      <!-- START: Chat Feel Talk (Hero) -->
+      <section id="chatFeelTalk" class="panel" aria-label="Chat Feel Talk">
+        <div class="panel-header">
+          <h2>Chat Feel Talk</h2>
+          <div class="row soft-label">
+            <span id="toneLock" aria-live="polite">Tone: aligning…</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="chat-stream" id="chatStream" aria-live="polite">
+            <div class="msg rw2 fade-in">
+              <div class="soft-label">RW2</div>
+              Hey — quick check: what brings you here today?
+            </div>
+          </div>
+
+          <!-- Micro-commitment chips (wizard-lite) -->
+          <div class="micro" id="microBar" aria-label="Quick choices">
+            <button class="chip" data-chip="resolve-debt">Debt resolution</button>
+            <button class="chip" data-chip="clean-credit">Clean up credit</button>
+            <button class="chip" data-chip="letter-los">LOS letter help</button>
+            <button class="chip" data-chip="just-looking">Just looking</button>
+          </div>
+
+          <!-- Chat input -->
+          <div class="chat-input" role="form" aria-label="Chat input">
+            <input id="chatInput" type="text" placeholder="Type what you need. RW2 keeps it simple." autocomplete="off" />
+            <button id="sendBtn" type="button">Send</button>
+          </div>
+        </div>
+      </section>
+      <!-- END: Chat Feel Talk (Hero) -->
+
+      <!-- START: Broadcast (Component Zone) -->
+      <section id="broadcast" class="panel" aria-label="Broadcast">
+        <div class="panel-header">
+          <h2>Broadcast</h2>
+          <div class="row soft-label"><span id="broadcastStatus">Ready</span></div>
+        </div>
+        <div class="panel-body">
+          <div class="component-grid" id="componentGrid">
+            <!-- Card 1 -->
+            <article class="component fade-in"
+              id="c-offer"
+              data-persona="soft-reactive"
+              data-reveal="revealOnScroll"
+              data-priority="1">
+              <div class="h">Simple next step</div>
+              <div class="sub">One question at a time. No fluff. We’ll prep your doc path cleanly.</div>
+              <button class="cta" data-cta="start-wizard">Start</button>
+            </article>
+
+            <!-- Card 2 -->
+            <article class="component"
+              id="c-trust"
+              data-persona="soft-reactive passive"
+              data-reveal="delayedReveal"
+              data-priority="2">
+              <div class="h">Trust, by design</div>
+              <div class="sub">We log only what’s needed to prep your documents. Nothing else.</div>
+              <button class="cta" data-cta="see-trust">See safeguards</button>
+            </article>
+
+            <!-- Card 3 -->
+            <article class="component"
+              id="c-faq"
+              data-persona="soft-reactive fast-reactive"
+              data-reveal="revealOnHover"
+              data-priority="3">
+              <div class="h">Quick answers</div>
+              <div class="sub">Timing, documents, costs — the short version, no runaround.</div>
+              <button class="cta" data-cta="open-faq">Open FAQ</button>
+            </article>
+
+            <!-- Card 4 -->
+            <article class="component"
+              id="c-empower"
+              data-persona="soft-reactive"
+              data-reveal="lockedUntilResolution"
+              data-priority="4">
+              <div class="h">Empowerment tools</div>
+              <div class="sub">Unlock credit rebuild tools after you kick off resolution.</div>
+              <button class="cta" data-cta="learn-empower" disabled>Unlocks after start</button>
+            </article>
+          </div>
+        </div>
+      </section>
+      <!-- END: Broadcast (Component Zone) -->
+    </main>
+
+    <!-- START: Footer -->
+    <footer>
+      <div class="foot">
+        <div>© <span id="year"></span> Fulcrum / RW2</div>
+        <div class="soft-label">Blink + Misfire Logic active • Intelligence Convergence Log enabled</div>
+      </div>
+    </footer>
+    <!-- END: Footer -->
+  </div>
+
+  <script>
+    /* START: Boot */
+    const $ = (sel, ctx=document) => ctx.querySelector(sel);
+    const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+    const app = $("#app");
+    const stream = $("#chatStream");
+    const input = $("#chatInput");
+    const sendBtn = $("#sendBtn");
+    const micro = $("#microBar");
+    const grid = $("#componentGrid");
+    const startBtn = $("#start-button");
+    const toneLock = $("#toneLock");
+    const broadcastStatus = $("#broadcastStatus");
+    $("#year").textContent = new Date().getFullYear();
+
+    // State (kept slim, in-memory)
+    const state = {
+      persona: "soft-reactive",
+      tone: "aligning",
+      started:false,
+      chips: new Set(),
+      log: []
+    };
+
+    function blinkScreen(){
+      document.body.classList.remove("blink");
+      // next frame to retrigger
+      requestAnimationFrame(()=>document.body.classList.add("blink"));
+      setTimeout(()=>document.body.classList.remove("blink"), 180);
+    }
+
+    function addMsg(role, text){
+      const node = document.createElement("div");
+      node.className = `msg ${role} fade-in`;
+      node.innerHTML = `<div class="soft-label">${role === "you" ? "You" : "RW2"}</div>${escapeHTML(text)}`;
+      stream.appendChild(node);
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    function escapeHTML(s=''){
+      return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    function setToneLock(value){
+      state.tone = value;
+      toneLock.textContent = `Tone: ${value}`;
+    }
+
+    function revealStrategy(){
+      // Persona-tuned ordering + reveal rules
+      const cards = $$(".component", grid)
+        .map(c => ({el:c, prio:+(c.dataset.priority||99)}))
+        .sort((a,b)=>a.prio-b.prio);
+
+      cards.forEach(({el}, idx)=>{
+        const rule = el.dataset.reveal || "revealOnScroll";
+        if(rule === "delayedReveal"){
+          setTimeout(()=>{ el.classList.add("fade-in"); el.style.display="flex"; }, 240 + idx*90);
+        }else if(rule === "revealOnHover"){
+          el.style.display="flex";
+          el.addEventListener("mouseenter", ()=> el.classList.add("fade-in"), { once:true });
+        }else if(rule === "lockedUntilResolution"){
+          if(state.started){ el.style.display="flex"; el.classList.add("fade-in"); }
+          else { el.style.display="flex"; el.classList.remove("fade-in"); el.querySelector(".cta")?.setAttribute("disabled",""); }
+        }else{
+          el.style.display="flex"; el.classList.add("fade-in");
+        }
+      });
+    }
+
+    function startFlow(){
+      if(state.started) return;
+      state.started = true;
+      setToneLock("locked");
+      blinkScreen();
+      addMsg("rw2", "Alright. I’ll guide — one question at a time. What’s the main account you want handled first?");
+      enableEmpowerment();
+      broadcastStatus.textContent = "Resolution started";
+      logIntel("start", {chips:[...state.chips]});
+      revealStrategy();
+    }
+
+    function enableEmpowerment(){
+      const emp = $("#c-empower");
+      if(!emp) return;
+      emp.classList.add("fade-in");
+      const btn = emp.querySelector(".cta");
+      if(btn){ btn.removeAttribute("disabled"); }
+    }
+
+    function logIntel(type, payload){
+      state.log.push({ t: Date.now(), type, ...payload });
+      // Hook: this is where the Intelligence Convergence Log would sync if needed.
+    }
+
+    /* START: Events */
+
+    // Nav routes load into Broadcast without navigation
+    $$(".nav-links a").forEach(a=>{
+      a.addEventListener("click", (e)=>{
+        const route = a.dataset.route;
+        if(!route) return;
+        e.preventDefault();
+        blinkScreen();
+        loadRoute(route);
+      });
+    });
+
+    function loadRoute(route){
+      broadcastStatus.textContent = "Loading…";
+      const views = {
+        about: () => [
+          {h:"What we do", sub:"We prep the path to resolution. One clean step at a time.", cta:["Start","start-wizard"]},
+          {h:"Why it works", sub:"Blink + Misfire Logic removes friction so you can finish.", cta:["Learn","see-trust"]},
+        ],
+        faq: () => [
+          {h:"How long does it take?", sub:"Most users kick off within minutes. Docs follow cleanly.", cta:["Open FAQ","open-faq"]},
+          {h:"What do you need from me?", sub:"Only what’s required to prepare your documents.", cta:["See list","open-faq"]},
+        ],
+        trust: () => [
+          {h:"Privacy by default", sub:"We store only what’s necessary for the intended purpose.", cta:["Safeguards","see-trust"]},
+          {h:"Transparent steps", sub:"Each step is shown before you commit.", cta:["See flow","see-trust"]},
+        ],
+        start: () => [
+          {h:"Begin now", sub:"Answer one question to kick things off.", cta:["Start","start-wizard"]},
+        ]
+      };
+      const data = (views[route]||views.about)();
+      // rewrite top two tiles and fade them
+      const tiles = $$(".component", grid);
+      tiles.slice(0, data.length).forEach((el, i)=>{
+        const [title, sub, ctaLabel, ctaKey] = [data[i].h, data[i].sub, data[i].cta[0], data[i].cta[1]];
+        el.querySelector(".h").textContent = title;
+        el.querySelector(".sub").textContent = sub;
+        const btn = el.querySelector(".cta");
+        btn.textContent = ctaLabel;
+        btn.dataset.cta = ctaKey;
+        el.classList.add("fade-in");
+      });
+      broadcastStatus.textContent = route[0].toUpperCase()+route.slice(1);
+      logIntel("route", {route});
+    }
+
+    // Micro-commitment chips
+    micro.addEventListener("click", (e)=>{
+      const chip = e.target.closest(".chip");
+      if(!chip) return;
+      const key = chip.dataset.chip;
+      const pressed = chip.getAttribute("aria-pressed") === "true";
+      chip.setAttribute("aria-pressed", String(!pressed));
+      if(!pressed) state.chips.add(key); else state.chips.delete(key);
+
+      // Tone lock nudges
+      if(state.chips.size === 1) setToneLock("centering");
+      if(state.chips.size >= 2) setToneLock("steady");
+
+      addMsg("rw2", quickNudge(key));
+      logIntel("chip", {key});
+      revealStrategy();
+    });
+
+    function quickNudge(key){
+      const map = {
+        "resolve-debt":"Got it. Which account feels most urgent to you right now?",
+        "clean-credit":"Understood. Want the fastest score wins or the cleanest long-term fix?",
+        "letter-los":"I’ll prep LOS guidance. Are you ready to drop the details now?",
+        "just-looking":"No problem — I’ll show a simple preview so you can see the path."
+      };
+      return map[key] || "Noted.";
+    }
+
+    // Chat input
+    sendBtn.addEventListener("click", onSend);
+    input.addEventListener("keydown", (e)=>{ if(e.key==="Enter") onSend(); });
+
+    function onSend(){
+      const text = input.value.trim();
+      if(!text) return;
+      addMsg("you", text);
+      input.value = "";
+      // Soft-reactive response pattern
+      setTimeout(()=>{
+        addMsg("rw2", respond(text));
+        logIntel("chat", {text});
+      }, 180);
+    }
+
+    function respond(text){
+      // Minimal phrasing engine hook (Tone Guidance Layer placeholder)
+      const t = text.toLowerCase();
+      if(/start|begin|go/.test(t)){ startFlow(); return "Done. First: source of the balance — original or collector?"; }
+      if(/los|letter/.test(t)){ return "Okay. I can outline LOS steps now or after we start — what do you prefer?"; }
+      if(/credit|score/.test(t)){ return "Quick win first or foundation first? Pick one and I’ll lay it out."; }
+      if(/help|how/.test(t)){ return "I’ll guide step-by-step. Want to begin now or see the short FAQ?"; }
+      return "I hear you. Want me to start the wizard now?";
+    }
+
+    // Start button
+    startBtn?.addEventListener("click", (e)=>{ e.preventDefault(); startFlow(); });
+
+    // Component CTA actions
+    grid.addEventListener("click", (e)=>{
+      const btn = e.target.closest(".cta");
+      if(!btn) return;
+      const key = btn.dataset.cta;
+      if(key === "start-wizard"){ startFlow(); }
+      if(key === "open-faq"){ loadRoute("faq"); }
+      if(key === "see-trust"){ loadRoute("trust"); }
+      if(key === "learn-empower"){ addMsg("rw2","Unlocked tools include dispute maps, score boosts, and timing tactics."); }
+      logIntel("cta", {key});
+    });
+
+    // Initial reveal pass
+    revealStrategy();
+    /* END: Events */
+    /* END: Boot */
+  </script>
+  <script src="addons/schema.js"></script>
+  <script src="addons/confirm.drop.js"></script>
+  <script src="script.js"></script>
+  <script src="addons/loader.js"></script>
+  <script src="addons/loader.init.js"></script>
+
+</body>
+</html>
